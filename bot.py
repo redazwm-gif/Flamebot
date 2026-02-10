@@ -105,7 +105,44 @@ file_handler.setFormatter(file_handler_formatter)
 # Add the handlers
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
+# ====== LỆNH /diem ======
 
+diem_data = {}
+
+@client.tree.command(name="diem", description="Quản lý điểm")
+@app_commands.describe(
+    user="Người cần xem/chỉnh điểm",
+    so_diem="Số điểm",
+    hanh_dong="xem / cong / tru"
+)
+@app_commands.choices(hanh_dong=[
+    app_commands.Choice(name="xem", value="xem"),
+    app_commands.Choice(name="cong", value="cong"),
+    app_commands.Choice(name="tru", value="tru"),
+])
+async def diem(
+    interaction: discord.Interaction,
+    hanh_dong: app_commands.Choice[str],
+    user: discord.Member,
+    so_diem: int = 0
+):
+    uid = user.id
+    diem_data.setdefault(uid, 0)
+
+    if hanh_dong.value == "xem":
+        await interaction.response.send_message(
+            f"📊 **Điểm của {user.mention}: {diem_data[uid]}**"
+        )
+    elif hanh_dong.value == "cong":
+        diem_data[uid] += so_diem
+        await interaction.response.send_message(
+            f"✅ Đã cộng {so_diem} điểm cho {user.mention}"
+        )
+    elif hanh_dong.value == "tru":
+        diem_data[uid] -= so_diem
+        await interaction.response.send_message(
+            f"➖ Đã trừ {so_diem} điểm của {user.mention}"
+)
 
 class DiscordBot(commands.Bot):
     def __init__(self) -> None:
