@@ -157,7 +157,11 @@ class DiscordBot(commands.Bot):
         self.invite_link = os.getenv("INVITE_LINK")
 
     async def setup_hook(self):
-        self.tree.add_command(diem)
+       from discord import app_commands
+
+@bot.tree.command(name="diem", description="Xem điểm")
+async def diem(interaction: discord.Interaction):
+    await interaction.response.send_message("Điểm nè") 
         await self.tree.sync()
 
 async def init_db(self) -> None:
