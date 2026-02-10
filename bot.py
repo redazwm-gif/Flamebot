@@ -52,16 +52,13 @@ intents.webhooks = True
 
 Privileged Intents (Needs to be enabled on developer portal of Discord), please use them only if you need them:
 intents.members = True
-intents = discord.Intents.default()
-intents.message_content = True
 intents.presences = True
 
 Uncomment this if you want to use prefix (normal) commands.
 It is recommended to use slash commands and therefore not use prefix commands.
 
 If you want to use prefix commands, make sure to also enable the intent below in the Discord developer portal.
-"""
-# intents.message_content = True
+
 
 # Setup both of the loggers
 
