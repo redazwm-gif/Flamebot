@@ -119,14 +119,7 @@ class DiscordBot(commands.Bot):
             intents=intents,
             help_command=None,
         )
-        """
-        This creates custom bot variables so that we can access these variables in cogs more easily.
-
-        For example, The logger is available using the following code:
-        - self.logger # In this class
-        - bot.logger # In this file
-        - self.bot.logger # In cogs
-        """
+        
         self.logger = logger
         self.database = None
         self.bot_prefix = os.getenv("PREFIX")
