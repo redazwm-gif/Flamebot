@@ -109,7 +109,6 @@ logger.addHandler(file_handler)
 
 diem_data = {}
 
-@client.tree.command(name="diem", description="Quản lý điểm")
 @app_commands.describe(
     user="Người cần xem/chỉnh điểm",
     so_diem="Số điểm",
