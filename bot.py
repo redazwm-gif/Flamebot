@@ -157,6 +157,10 @@ class DiscordBot(commands.Bot):
         self.bot_prefix = os.getenv("PREFIX")
         self.invite_link = os.getenv("INVITE_LINK")
 
+    async def setup_hook(self):
+        self.tree.add_command(diem)
+        await self.tree.sync()
+
 async def init_db(self) -> None:
     base_dir = os.path.dirname(os.path.realpath(__file__))
     db_path = os.path.join(base_dir, "database", "database.db")
