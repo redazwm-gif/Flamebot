@@ -23,7 +23,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-"""	
 Setup bot intents (events restrictions)
 For more information about intents, please go to the following websites:
 https://discordpy.readthedocs.io/en/latest/intents.html
@@ -140,9 +139,6 @@ async def init_db(self) -> None:
             await db.commit()
 
     async def load_cogs(self) -> None:
-        """
-        The code in this function is executed whenever the bot will start.
-        """
         for file in os.listdir(f"{os.path.realpath(os.path.dirname(__file__))}/cogs"):
             if file.endswith(".py"):
                 extension = file[:-3]
@@ -157,23 +153,13 @@ async def init_db(self) -> None:
 
     @tasks.loop(minutes=1.0)
     async def status_task(self) -> None:
-        """
-        Setup the game status task of the bot.
-        """
         statuses = ["with you!", "with Krypton!", "with humans!"]
         await self.change_presence(activity=discord.Game(random.choice(statuses)))
-
     @status_task.before_loop
     async def before_status_task(self) -> None:
-        """
-        Before starting the status changing task, we make sure the bot is ready
-        """
         await self.wait_until_ready()
 
     async def setup_hook(self) -> None:
-        """
-        This will just be executed when the bot starts the first time.
-        """
         self.logger.info(f"Logged in as {self.user.name}")
         self.logger.info(f"discord.py API version: {discord.__version__}")
         self.logger.info(f"Python version: {platform.python_version()}")
@@ -191,21 +177,11 @@ async def init_db(self) -> None:
         )
 
     async def on_message(self, message: discord.Message) -> None:
-        """
-        The code in this event is executed every time someone sends a message, with or without the prefix
-
-        :param message: The message that was sent.
-        """
         if message.author == self.user or message.author.bot:
             return
         await self.process_commands(message)
 
     async def on_command_completion(self, context: Context) -> None:
-        """
-        The code in this event is executed every time a normal command has been *successfully* executed.
-
-        :param context: The context of the command that has been executed.
-        """
         full_command_name = context.command.qualified_name
         split = full_command_name.split(" ")
         executed_command = str(split[0])
@@ -219,12 +195,6 @@ async def init_db(self) -> None:
             )
 
     async def on_command_error(self, context: Context, error) -> None:
-        """
-        The code in this event is executed every time a normal valid command catches an error.
-
-        :param context: The context of the normal command that failed executing.
-        :param error: The error that has been faced.
-        """
         if isinstance(error, commands.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)
             hours, minutes = divmod(minutes, 60)
