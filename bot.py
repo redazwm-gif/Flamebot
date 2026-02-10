@@ -138,15 +138,18 @@ class DiscordBot(commands.Bot):
         self.bot_prefix = os.getenv("PREFIX")
         self.invite_link = os.getenv("INVITE_LINK")
 
-    async def init_db(self) -> None:
-        async with aiosqlite.connect(
-            f"{os.path.realpath(os.path.dirname(__file__))}/database/database.db"
-        ) as db:
-            with open(
-                f"{os.path.realpath(os.path.dirname(__file__))}/database/schema.sql",
-                encoding = "utf-8"
-            ) as file:
-                await db.executescript(file.read())
+async def init_db(self) -> None:
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+    db_path = os.path.join(base_dir, "database", "database.db")
+
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+    async with aiosqlite.connect(db_path) as db:
+        with open(
+            os.path.join(base_dir, "database", "schema.sql"),
+            encoding="utf-8"
+        ) as file:
+            await db.executescript(file.read())
             await db.commit()
 
     async def load_cogs(self) -> None:
