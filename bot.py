@@ -19,7 +19,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import Context
 from dotenv import load_dotenv
 
-from database import DatabaseManager
+from database.database import DatabaseManager
 
 load_dotenv()
 
