@@ -52,6 +52,7 @@ intents.webhooks = True
 
 Privileged Intents (Needs to be enabled on developer portal of Discord), please use them only if you need them:
 intents.members = True
+intents = discord.Intents.default()
 intents.message_content = True
 intents.presences = True
 """
