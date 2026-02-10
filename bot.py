@@ -23,13 +23,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-Setup bot intents (events restrictions)
-For more information about intents, please go to the following websites:
-https://discordpy.readthedocs.io/en/latest/intents.html
-https://discordpy.readthedocs.io/en/latest/intents.html#privileged-intents
+intents = discord.Intents.default()
+intents.message_content = True
 
-
-Default Intents:
 intents.bans = True
 intents.dm_messages = True
 intents.dm_reactions = True
