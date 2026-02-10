@@ -45,7 +45,7 @@ intents.typing = True
 intents.voice_states = True
 intents.webhooks = True
 
-Privileged Intents (Needs to be enabled on developer portal of Discord), please use them only if you need them:
+# Privileged Intents (Needs to be enabled on developer portal of Discord), please use them only if you need them:
 intents.members = True
 intents.presences = True
 
