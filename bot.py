@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import os
-from PIL import Image, ImageDraw, ImageFont
 
 TOKEN = os.getenv("TOKEN")
 
@@ -18,15 +17,14 @@ data = {}
 # ================= FORM =================
 class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
 
-    id_custom = discord.ui.TextInput(label="Tên Team / Custom")
-    id_game = discord.ui.TextInput(label="ID Game")
+    team = discord.ui.TextInput(label="Tên Team")
+    game = discord.ui.TextInput(label="ID Game")
     kill = discord.ui.TextInput(label="Số Kill")
     top = discord.ui.TextInput(label="Top")
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        custom = self.id_custom.value.strip()
-        game = self.id_game.value.strip()
+        team_name = self.team.value.strip()
 
         try:
             kill = int(self.kill.value)
@@ -43,41 +41,40 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
             6: 5, 7: 4, 8: 3, 9: 2, 10: 1
         }
 
-        diem = kill + top_points.get(top, 0)
+        diem_tran = kill + top_points.get(top, 0)
 
-        if custom not in data:
-            data[custom] = {
-                "point": 0,
-                "match": 0
-            }
+        if team_name not in data:
+            data[team_name] = {"point": 0, "match": 0}
 
-        data[custom]["point"] += diem
-        data[custom]["match"] += 1
+        data[team_name]["point"] += diem_tran
+        data[team_name]["match"] += 1
 
-        await interaction.response.send_message(
-            f"🔥 Team: {custom}\n"
-            f"🎮 Game: {game}\n"
-            f"💥 Kill: {kill}\n"
-            f"🏆 Top: {top}\n"
-            f"⭐ Điểm trận: {diem}\n"
-            f"📊 Tổng điểm: {data[custom]['point']}\n"
-            f"🎮 Tổng trận: {data[custom]['match']}"
+        embed = discord.Embed(
+            title="🔥 KẾT QUẢ TRẬN",
+            color=discord.Color.orange()
         )
 
-# ================= LỆNH /tinhdiem =================
+        embed.add_field(name="🎮 Team", value=team_name, inline=False)
+        embed.add_field(name="💥 Kill", value=kill)
+        embed.add_field(name="🏆 Top", value=top)
+        embed.add_field(name="⭐ Điểm trận", value=diem_tran)
+        embed.add_field(name="📊 Tổng điểm", value=data[team_name]["point"])
+        embed.add_field(name="🎮 Tổng trận", value=data[team_name]["match"])
+
+        await interaction.response.send_message(embed=embed)
+
+# ================= /tinhdiem =================
 @bot.tree.command(name="tinhdiem", description="Nhập điểm bằng form popup")
 async def tinhdiem(interaction: discord.Interaction):
     await interaction.response.send_modal(DiemModal())
 
-# ================= LỆNH /bxh =================
-@bot.tree.command(name="bxh", description="Xem bảng xếp hạng ảnh")
+# ================= /bxh =================
+@bot.tree.command(name="bxh", description="Xem bảng xếp hạng")
 async def bxh(interaction: discord.Interaction):
 
     if not data:
-        await interaction.response.send_message("Chưa có dữ liệu.")
+        await interaction.response.send_message("❌ Chưa có dữ liệu.")
         return
-
-    await interaction.response.defer()
 
     sorted_data = sorted(
         data.items(),
@@ -85,47 +82,33 @@ async def bxh(interaction: discord.Interaction):
         reverse=True
     )
 
-    # ===== MỞ ẢNH NỀN =====
-    try:
-        img = Image.open("retouch_2026021117323495.png").convert("RGB")
-    except Exception as e:
-        await interaction.followup.send("❌ Không tìm thấy ảnh nền trong folder bot")
-        return
+    embed = discord.Embed(
+        title="🏆 BẢNG XẾP HẠNG 🏆",
+        color=discord.Color.gold()
+    )
 
-    draw = ImageDraw.Draw(img)
+    medals = ["🥇", "🥈", "🥉"]
 
-    # ===== LOAD FONT =====
-    try:
-        font = ImageFont.truetype("arial.ttf", 36)
-    except:
-        font = ImageFont.load_default()
+    for index, (team, info) in enumerate(sorted_data):
 
-    # ===== TOẠ ĐỘ BẮT ĐẦU =====
-    y = 280
-    rank = 1
+        if index < 3:
+            rank_icon = medals[index]
+        else:
+            rank_icon = f"{index+1}️⃣"
 
-    for custom, info in sorted_data:
+        embed.add_field(
+            name=f"{rank_icon} {team}",
+            value=f"⭐ Điểm: {info['point']}\n🎮 Số trận: {info['match']}",
+            inline=False
+        )
 
-        text_team = f"{rank}. {custom}"
-        text_point = str(info["point"])
-        text_match = str(info["match"])
+    await interaction.response.send_message(embed=embed)
 
-        # Cột Team
-        draw.text((880, y), text_team, fill="white", font=font)
-
-        # Cột Điểm
-        draw.text((1400, y), text_point, fill="white", font=font)
-
-        # Cột Trận
-        draw.text((1550, y), text_match, fill="white", font=font)
-
-        y += 75
-        rank += 1
-
-    img_path = "bxh.png"
-    img.save(img_path)
-
-    await interaction.followup.send(file=discord.File(img_path))
+# ================= RESET =================
+@bot.tree.command(name="resetbxh", description="Reset toàn bộ điểm")
+async def resetbxh(interaction: discord.Interaction):
+    data.clear()
+    await interaction.response.send_message("✅ Đã reset bảng xếp hạng.")
 
 # ================= READY =================
 @bot.event
