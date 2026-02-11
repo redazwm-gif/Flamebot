@@ -1,133 +1,58 @@
-const { 
-  Client, 
-  GatewayIntentBits, 
-  SlashCommandBuilder, 
-  REST, 
-  Routes, 
-  ModalBuilder, 
-  TextInputBuilder, 
-  TextInputStyle, 
-  ActionRowBuilder 
-} = require('discord.js');
+import discord
+from discord import app_commands
+from discord.ext import commands
+import os
 
-const TOKEN = process.env.TOKEN;
-const CLIENT_ID = process.env.CLIENT_ID;
+TOKEN = os.getenv("TOKEN")
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
-});
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-let database = {}; // lưu điểm theo custom
+data = {}
 
-// ===== Đăng ký slash command =====
-const commands = [
-  new SlashCommandBuilder()
-    .setName('tinhdiem')
-    .setDescription('Nhập điểm custom'),
-  new SlashCommandBuilder()
-    .setName('bxh')
-    .setDescription('Xem bảng xếp hạng')
-    .addStringOption(option =>
-      option.setName('custom')
-        .setDescription('Nhập id custom')
-        .setRequired(true))
-].map(cmd => cmd.toJSON());
+class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
 
-const rest = new REST({ version: '10' }).setToken(TOKEN);
+    id_custom = discord.ui.TextInput(label="ID Custom", placeholder="VD: TT2")
+    id_game = discord.ui.TextInput(label="ID Game", placeholder="VD: 1")
+    kill = discord.ui.TextInput(label="Số Kill", placeholder="VD: 5")
+    top = discord.ui.TextInput(label="Top", placeholder="VD: 1")
 
-(async () => {
-  await rest.put(
-    Routes.applicationCommands(CLIENT_ID),
-    { body: commands }
-  );
-})();
+    async def on_submit(self, interaction: discord.Interaction):
+        custom = str(self.id_custom)
+        game = str(self.id_game)
+        kill = int(self.kill)
+        top = int(self.top)
 
-// ===== Xử lý interaction =====
-client.on('interactionCreate', async interaction => {
+        diem = kill + (15 - top)
 
-  if (interaction.isChatInputCommand()) {
+        if custom not in data:
+            data[custom] = 0
 
-    // Mở form
-    if (interaction.commandName === 'tinhdiem') {
+        data[custom] += diem
 
-      const modal = new ModalBuilder()
-        .setCustomId('formTinhDiem')
-        .setTitle('Tính điểm custom');
+        await interaction.response.send_message(
+            f"✅ Custom: {custom}\n🎮 Game: {game}\n💥 Kill: {kill}\n🏆 Top: {top}\n⭐ Điểm trận: {diem}\n🔥 Tổng điểm custom: {data[custom]}"
+        )
 
-      const idCustom = new TextInputBuilder()
-        .setCustomId('idcustom')
-        .setLabel('ID Custom')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+@bot.tree.command(name="tinhdiem", description="Nhập điểm bằng form popup")
+async def tinhdiem(interaction: discord.Interaction):
+    await interaction.response.send_modal(DiemModal())
 
-      const idGame = new TextInputBuilder()
-        .setCustomId('idgame')
-        .setLabel('ID Người chơi')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+@bot.tree.command(name="bxh", description="Xem bảng xếp hạng")
+async def bxh(interaction: discord.Interaction):
+    if not data:
+        await interaction.response.send_message("Chưa có dữ liệu.")
+        return
 
-      const diem = new TextInputBuilder()
-        .setCustomId('diem')
-        .setLabel('Điểm trận')
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true);
+    msg = "🏆 BẢNG XẾP HẠNG:\n"
+    for custom, diem in data.items():
+        msg += f"{custom}: {diem} điểm\n"
 
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(idCustom),
-        new ActionRowBuilder().addComponents(idGame),
-        new ActionRowBuilder().addComponents(diem)
-      );
+    await interaction.response.send_message(msg)
 
-      await interaction.showModal(modal);
-    }
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print("Bot đã sẵn sàng!")
 
-    // Xem bảng xếp hạng
-    if (interaction.commandName === 'bxh') {
-      const custom = interaction.options.getString('custom');
-
-      if (!database[custom]) {
-        return interaction.reply("Custom này chưa có dữ liệu.");
-      }
-
-      let sorted = Object.entries(database[custom])
-        .sort((a, b) => b[1] - a[1]);
-
-      let text = `🏆 BXH Custom ${custom} 🏆\n`;
-
-      sorted.forEach((player, index) => {
-        text += `${index + 1}. ID ${player[0]} - ${player[1]} điểm\n`;
-      });
-
-      await interaction.reply(text);
-    }
-  }
-
-  // Khi submit form
-  if (interaction.isModalSubmit()) {
-
-    if (interaction.customId === 'formTinhDiem') {
-
-      const custom = interaction.fields.getTextInputValue('idcustom');
-      const id = interaction.fields.getTextInputValue('idgame');
-      const diem = parseInt(interaction.fields.getTextInputValue('diem'));
-
-      if (!database[custom]) {
-        database[custom] = {};
-      }
-
-      if (!database[custom][id]) {
-        database[custom][id] = 0;
-      }
-
-      database[custom][id] += diem;
-
-      await interaction.reply(`✅ Đã cộng ${diem} điểm cho ID ${id} trong custom ${custom}`);
-    }
-  }
-});
-
-client.once('ready', () => {
-  console.log('Bot đã online!');
-});
-
-client.login(TOKEN);
+bot.run(TOKEN)
