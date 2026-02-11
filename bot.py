@@ -82,7 +82,7 @@ async def bxh(interaction: discord.Interaction):
 
     # ===== MỞ ẢNH NỀN =====
     try:
-        img = Image.open("background.png").convert("RGB")
+        img = Image.open("retouch_2026021117323495.png").convert("RGB")
     except:
         await interaction.followup.send("❌ Không tìm thấy background.png")
         return
