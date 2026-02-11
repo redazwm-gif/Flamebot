@@ -5,7 +5,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 TOKEN = os.getenv("TOKEN")
 
+if TOKEN is None:
+    raise ValueError("❌ Chưa set TOKEN trong Environment Variables")
+
 intents = discord.Intents.default()
+intents.message_content = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 data = {}
@@ -13,15 +18,15 @@ data = {}
 # ================= FORM =================
 class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
 
-    id_custom = discord.ui.TextInput(label="ID Custom")
+    id_custom = discord.ui.TextInput(label="Tên Team / Custom")
     id_game = discord.ui.TextInput(label="ID Game")
     kill = discord.ui.TextInput(label="Số Kill")
     top = discord.ui.TextInput(label="Top")
 
     async def on_submit(self, interaction: discord.Interaction):
 
-        custom = self.id_custom.value
-        game = self.id_game.value
+        custom = self.id_custom.value.strip()
+        game = self.id_game.value.strip()
 
         try:
             kill = int(self.kill.value)
@@ -50,7 +55,7 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
         data[custom]["match"] += 1
 
         await interaction.response.send_message(
-            f"🔥 Custom: {custom}\n"
+            f"🔥 Team: {custom}\n"
             f"🎮 Game: {game}\n"
             f"💥 Kill: {kill}\n"
             f"🏆 Top: {top}\n"
@@ -83,36 +88,38 @@ async def bxh(interaction: discord.Interaction):
     # ===== MỞ ẢNH NỀN =====
     try:
         img = Image.open("retouch_2026021117323495.png").convert("RGB")
-    except:
-        await interaction.followup.send("❌ Không tìm thấy ảnh nền")
+    except Exception as e:
+        await interaction.followup.send("❌ Không tìm thấy ảnh nền trong folder bot")
         return
 
     draw = ImageDraw.Draw(img)
 
+    # ===== LOAD FONT =====
     try:
-        font = ImageFont.truetype("arial.ttf", 32)
+        font = ImageFont.truetype("arial.ttf", 36)
     except:
         font = ImageFont.load_default()
 
-    # 🔥 TOẠ ĐỘ CHUẨN CHO BẢNG BÊN PHẢI
+    # ===== TOẠ ĐỘ BẮT ĐẦU =====
     y = 280
     rank = 1
 
     for custom, info in sorted_data:
-        text = f"{rank}. {custom}"
-        point_text = f"{info['point']}"
-        match_text = f"{info['match']}"
 
-        # Cột Tên Team
-        draw.text((880, y), text, fill="white", font=font)
+        text_team = f"{rank}. {custom}"
+        text_point = str(info["point"])
+        text_match = str(info["match"])
+
+        # Cột Team
+        draw.text((880, y), text_team, fill="white", font=font)
 
         # Cột Điểm
-        draw.text((1400, y), point_text, fill="white", font=font)
+        draw.text((1400, y), text_point, fill="white", font=font)
 
         # Cột Trận
-        draw.text((1550, y), match_text, fill="white", font=font)
+        draw.text((1550, y), text_match, fill="white", font=font)
 
-        y += 70
+        y += 75
         rank += 1
 
     img_path = "bxh.png"
@@ -123,7 +130,12 @@ async def bxh(interaction: discord.Interaction):
 # ================= READY =================
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
-    print(f"Đã đăng nhập: {bot.user}")
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ Đã sync {len(synced)} slash command")
+    except Exception as e:
+        print(e)
+
+    print(f"🔥 Bot đã đăng nhập: {bot.user}")
 
 bot.run(TOKEN)
