@@ -84,23 +84,35 @@ async def bxh(interaction: discord.Interaction):
     try:
         img = Image.open("retouch_2026021117323495.png").convert("RGB")
     except:
-        await interaction.followup.send("❌ Không tìm thấy background.png")
+        await interaction.followup.send("❌ Không tìm thấy ảnh nền")
         return
 
     draw = ImageDraw.Draw(img)
 
     try:
-        font = ImageFont.truetype("arial.ttf", 30)
+        font = ImageFont.truetype("arial.ttf", 32)
     except:
         font = ImageFont.load_default()
 
-    y = 200
+    # 🔥 TOẠ ĐỘ CHUẨN CHO BẢNG BÊN PHẢI
+    y = 280
     rank = 1
 
     for custom, info in sorted_data:
-        text = f"{rank}. {custom} - {info['point']} điểm ({info['match']} trận)"
-        draw.text((150, y), text, fill="white", font=font)
-        y += 60
+        text = f"{rank}. {custom}"
+        point_text = f"{info['point']}"
+        match_text = f"{info['match']}"
+
+        # Cột Tên Team
+        draw.text((880, y), text, fill="white", font=font)
+
+        # Cột Điểm
+        draw.text((1400, y), point_text, fill="white", font=font)
+
+        # Cột Trận
+        draw.text((1550, y), match_text, fill="white", font=font)
+
+        y += 70
         rank += 1
 
     img_path = "bxh.png"
