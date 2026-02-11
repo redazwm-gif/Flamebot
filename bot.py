@@ -6,16 +6,11 @@ Description:
 Version: 6.5.0
 """
 
-import json
 import logging
 import os
-import platform
-import random
-
-import aiosqlite
 import discord
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import commands
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,46 +20,45 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
-intents.presences = True
 
 # ================= LOGGING =================
 
-class LoggingFormatter(logging.Formatter):
-    COLORS = {
-        logging.DEBUG: "\x1b[38m",
-        logging.INFO: "\x1b[34m",
-        logging.WARNING: "\x1b[33m",
-        logging.ERROR: "\x1b[31m",
-        logging.CRITICAL: "\x1b[31;1m",
-    }
-
-    def format(self, record):
-        log_color = self.COLORS.get(record.levelno, "")
-        formatter = logging.Formatter(
-            f"{log_color}[{{asctime}}] [{{levelname}}] {{message}}\x1b[0m",
-            "%Y-%m-%d %H:%M:%S",
-            style="{",
-        )
-        return formatter.format(record)
-
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("discord_bot")
-logger.setLevel(logging.INFO)
-
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(LoggingFormatter())
-logger.addHandler(console_handler)
 
 # ================= DIEM DATA =================
 
 diem_data = {}
 
-# ================= SLASH COMMAND =================
+# ================= BOT CLASS =================
+
+class DiscordBot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix="!",
+            intents=intents,
+            help_command=None,
+        )
+
+    async def setup_hook(self):
+        logger.info("Bot đang khởi động...")
+
+        self.tree.add_command(diem)
+        self.tree.add_command(bxh)
+
+        await self.tree.sync()
+        logger.info("Slash command đã sync xong!")
+
+    async def on_ready(self):
+        logger.info(f"Đã đăng nhập: {self.user}")
+
+# ================= SLASH COMMAND DIEM =================
+
 @app_commands.command(name="diem", description="Quản lý điểm")
 @app_commands.describe(
-    user="Người cần xem/chỉnh điểm",
-    so_diem="Số điểm",
-    hanh_dong="xem / cong / tru"
+    hanh_dong="xem / cong / tru",
+    user="Chọn người",
+    so_diem="Số điểm (nếu cộng/trừ)"
 )
 @app_commands.choices(hanh_dong=[
     app_commands.Choice(name="xem", value="xem"),
@@ -88,38 +82,34 @@ async def diem(
     elif hanh_dong.value == "cong":
         diem_data[uid] += so_diem
         await interaction.response.send_message(
-            f"✅ Đã cộng {so_diem} điểm cho {user.mention}"
+            f"✅ Đã cộng {so_diem} điểm cho {user.mention}\nTổng: {diem_data[uid]}"
         )
 
     elif hanh_dong.value == "tru":
         diem_data[uid] -= so_diem
         await interaction.response.send_message(
-            f"➖ Đã trừ {so_diem} điểm của {user.mention}"
+            f"➖ Đã trừ {so_diem} điểm của {user.mention}\nTổng: {diem_data[uid]}"
         )
 
-# ================= BOT CLASS =================
+# ================= SLASH COMMAND BXH =================
 
-class DiscordBot(commands.Bot):
-    def __init__(self):
-        super().__init__(
-            command_prefix="!",
-            intents=intents,
-            help_command=None,
-        )
+@app_commands.command(name="bxh", description="Xem bảng xếp hạng")
+async def bxh(interaction: discord.Interaction):
 
-    async def setup_hook(self):
-        logger.info("Bot đang khởi động...")
+    if not diem_data:
+        await interaction.response.send_message("Chưa có dữ liệu điểm.")
+        return
 
-        # Add slash command
-        self.tree.add_command(diem)
+    sorted_users = sorted(diem_data.items(), key=lambda x: x[1], reverse=True)
 
-        # Sync command
-        await self.tree.sync()
+    message = "🏆 **BẢNG XẾP HẠNG** 🏆\n\n"
 
-        logger.info("Slash command đã sync xong!")
+    for i, (uid, score) in enumerate(sorted_users[:10], start=1):
+        member = interaction.guild.get_member(uid)
+        if member:
+            message += f"{i}. {member.display_name} - {score} điểm\n"
 
-    async def on_ready(self):
-        logger.info(f"Đã đăng nhập: {self.user}")
+    await interaction.response.send_message(message)
 
 # ================= RUN BOT =================
 
