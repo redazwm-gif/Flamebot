@@ -44,12 +44,13 @@ async def bxh(interaction: discord.Interaction):
         await interaction.response.send_message("Chưa có dữ liệu.")
         return
 
-    msg = "🏆 BẢNG XẾP HẠNG:\n"
-    for custom, diem in data.items():
-        msg += f"{custom}: {diem} điểm\n"
+    embed = discord.Embed(title="🏆 BẢNG XẾP HẠNG")
 
-    await interaction.response.send_message(msg)
+    embed.set_image(
+        url="https://raw.githubusercontent.com/redazwm-gif/Flamebot/main/IMG_20260210_171725.png"
+    )
 
+    await interaction.response.send_message(embed=embed)
 @bot.event
 async def on_ready():
     await bot.tree.sync()
