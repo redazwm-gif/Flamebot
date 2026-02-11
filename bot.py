@@ -60,7 +60,7 @@ logger.addHandler(console_handler)
 diem_data = {}
 
 # ================= SLASH COMMAND =================
-
+@app_commands.command(name="diem", description="Quản lý điểm")
 @app_commands.describe(
     user="Người cần xem/chỉnh điểm",
     so_diem="Số điểm",
