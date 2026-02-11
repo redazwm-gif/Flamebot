@@ -42,16 +42,33 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
         diem = kill + top_points.get(top, 0)
 
         if custom not in data:
-            data[custom] = {"point": 0, "match": 0}
+            data[custom] = {
+                "point": 0,
+                "match": 0,
+                "last_game": 0,
+                "last_kill": 0,
+                "last_top": 0,
+                "last_match_point": 0
+            }
 
+        # Lưu dữ liệu trận gần nhất
+        data[custom]["last_game"] = game
+        data[custom]["last_kill"] = kill
+        data[custom]["last_top"] = top
+        data[custom]["last_match_point"] = diem
+
+        # Cộng tổng
         data[custom]["point"] += diem
         data[custom]["match"] += 1
 
         await interaction.response.send_message(
             f"🔥 Custom: {custom}\n"
             f"🎮 Game: {game}\n"
+            f"💥 Kill: {kill}\n"
+            f"🏆 Top: {top}\n"
             f"⭐ Điểm trận: {diem}\n"
-            f"📊 Tổng điểm: {data[custom]['point']}"
+            f"📊 Tổng điểm: {data[custom]['point']}\n"
+            f"🎮 Tổng trận: {data[custom]['match']}"
         )
 
 # ================= LỆNH /tinhdiem =================
@@ -76,28 +93,36 @@ async def bxh(interaction: discord.Interaction):
     )
 
     # ===== TẠO ẢNH =====
-    width = 800
-    height = 100 + (len(sorted_data) * 60)
+    width = 900
+    height = 120 + (len(sorted_data) * 70)
 
     img = Image.new("RGB", (width, height), (25, 25, 25))
     draw = ImageDraw.Draw(img)
 
     try:
         font_title = ImageFont.truetype("arial.ttf", 40)
-        font_text = ImageFont.truetype("arial.ttf", 28)
+        font_text = ImageFont.truetype("arial.ttf", 26)
     except:
         font_title = ImageFont.load_default()
         font_text = ImageFont.load_default()
 
-    draw.text((250, 20), "BANG XEP HANG", fill="gold", font=font_title)
+    draw.text((300, 20), "BANG XEP HANG", fill="gold", font=font_title)
 
     y = 100
     rank = 1
 
     for custom, info in sorted_data:
-        text = f"{rank}. {custom} - {info['point']} diem ({info['match']} tran)"
-        draw.text((100, y), text, fill="white", font=font_text)
-        y += 50
+        text = (
+            f"{rank}. {custom} | "
+            f"{info['point']} diem | "
+            f"{info['match']} tran | "
+            f"Game {info['last_game']} | "
+            f"{info['last_kill']} Kill | "
+            f"Top {info['last_top']}"
+        )
+
+        draw.text((50, y), text, fill="white", font=font_text)
+        y += 60
         rank += 1
 
     img_path = "bxh.png"
