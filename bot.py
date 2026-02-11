@@ -159,10 +159,8 @@ class DiscordBot(commands.Bot):
     async def setup_hook(self):
        from discord import app_commands
 
-@bot.tree.command(name="diem", description="Xem điểm")
-async def diem(interaction: discord.Interaction):
-    await interaction.response.send_message("Điểm nè") 
-        await self.tree.sync()
+
+
 
 async def init_db(self) -> None:
     base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -288,7 +286,5 @@ async def init_db(self) -> None:
 async def diem(interaction: discord.Interaction):
     await interaction.response.send_message("Điểm nè")
 
-bot = DiscordBot()
-bot.run(os.getenv("TOKEN"))
 bot = DiscordBot()
 bot.run(os.getenv("TOKEN"))
