@@ -281,9 +281,4 @@ async def init_db(self) -> None:
             await context.send(embed=embed)
         else:
             raise error
-@bot.tree.command(name="diem", description="Xem điểm")
-async def diem(interaction: discord.Interaction):
-    await interaction.response.send_message("Điểm nè")
 
-
-bot.run(os.getenv("TOKEN"))
