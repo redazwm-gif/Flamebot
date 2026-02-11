@@ -69,7 +69,7 @@ if custom not in data:
 data[custom]["point"] += diem
 data[custom]["match"] += 1
 
-        await interaction.response.send_message(
+    await interaction.response.send_message(
             f"🔥 Custom: {custom}\n"
             f"🎮 Game: {game}\n"
             f"💥 Kill: {kill}\n"
