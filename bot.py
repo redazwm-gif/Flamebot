@@ -8,7 +8,7 @@ intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # ===== LINK ẢNH BXH (THAY LINK RAW CỦA BẠN VÀO ĐÂY) =====
-IMAGE_URL = "DÁN_LINK_RAW_ẢNH_VÀO_ĐÂY"
+IMAGE_URL = "https://raw.githubusercontent.com/redazwm-gif/Flamebot/main/IMG_20260210_171725.png"
 
 # Lưu dữ liệu
 data = {}
