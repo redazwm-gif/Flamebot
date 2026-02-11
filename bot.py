@@ -1,14 +1,12 @@
 import discord
 from discord.ext import commands
 import os
+from PIL import Image, ImageDraw, ImageFont
 
 TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-# ===== LINK ẢNH BXH =====
-IMAGE_URL = "https://raw.githubusercontent.com/redazwm-gif/Flamebot/main/IMG_20260210_171725.png"
 
 # Lưu dữ liệu
 data = {}
@@ -52,11 +50,8 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
         await interaction.response.send_message(
             f"🔥 Custom: {custom}\n"
             f"🎮 Game: {game}\n"
-            f"💥 Kill: {kill}\n"
-            f"🏆 Top: {top}\n"
             f"⭐ Điểm trận: {diem}\n"
-            f"📊 Tổng điểm: {data[custom]['point']}\n"
-            f"🎮 Tổng trận: {data[custom]['match']}"
+            f"📊 Tổng điểm: {data[custom]['point']}"
         )
 
 # ================= LỆNH /tinhdiem =================
@@ -65,7 +60,7 @@ async def tinhdiem(interaction: discord.Interaction):
     await interaction.response.send_modal(DiemModal())
 
 # ================= LỆNH /bxh =================
-@bot.tree.command(name="bxh", description="Xem bảng xếp hạng")
+@bot.tree.command(name="bxh", description="Xem bảng xếp hạng ảnh")
 async def bxh(interaction: discord.Interaction):
 
     if not data:
@@ -80,23 +75,35 @@ async def bxh(interaction: discord.Interaction):
         reverse=True
     )
 
-    embed = discord.Embed(
-        title="🏆 BẢNG XẾP HẠNG 🏆",
-        color=discord.Color.gold()
-    )
+    # ===== TẠO ẢNH =====
+    width = 800
+    height = 100 + (len(sorted_data) * 60)
 
+    img = Image.new("RGB", (width, height), (25, 25, 25))
+    draw = ImageDraw.Draw(img)
+
+    try:
+        font_title = ImageFont.truetype("arial.ttf", 40)
+        font_text = ImageFont.truetype("arial.ttf", 28)
+    except:
+        font_title = ImageFont.load_default()
+        font_text = ImageFont.load_default()
+
+    draw.text((250, 20), "BANG XEP HANG", fill="gold", font=font_title)
+
+    y = 100
     rank = 1
+
     for custom, info in sorted_data:
-        embed.add_field(
-            name=f"#{rank} - {custom}",
-            value=f"⭐ {info['point']} điểm | 🎮 {info['match']} trận",
-            inline=False
-        )
+        text = f"{rank}. {custom} - {info['point']} diem ({info['match']} tran)"
+        draw.text((100, y), text, fill="white", font=font_text)
+        y += 50
         rank += 1
 
-    embed.set_image(url=IMAGE_URL)
+    img_path = "bxh.png"
+    img.save(img_path)
 
-    await interaction.followup.send(embed=embed)
+    await interaction.followup.send(file=discord.File(img_path))
 
 # ================= READY =================
 @bot.event
