@@ -7,6 +7,9 @@ TOKEN = os.getenv("TOKEN")
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# ===== LINK ẢNH BXH (THAY LINK RAW CỦA BẠN VÀO ĐÂY) =====
+IMAGE_URL = "DÁN_LINK_RAW_ẢNH_VÀO_ĐÂY"
+
 # Lưu dữ liệu
 data = {}
 
@@ -80,46 +83,28 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
             f"🎮 Tổng trận: {data[custom]['match']}"
         )
 
-
 # ================= LỆNH /tinhdiem =================
 @bot.tree.command(name="tinhdiem", description="Nhập điểm bằng form popup")
 async def tinhdiem(interaction: discord.Interaction):
     await interaction.response.send_modal(DiemModal())
 
-
 # ================= LỆNH /bxh =================
 @bot.tree.command(name="bxh", description="Xem bảng xếp hạng")
 async def bxh(interaction: discord.Interaction):
-
-    if not data:
-        await interaction.response.send_message("Chưa có dữ liệu điểm.")
-        return
-
-    sorted_data = sorted(data.items(), key=lambda x: x[1]["point"], reverse=True)
 
     embed = discord.Embed(
         title="🏆 BẢNG XẾP HẠNG 🏆",
         color=discord.Color.gold()
     )
 
-    medals = ["🥇", "🥈", "🥉"]
-
-    for i, (custom, info) in enumerate(sorted_data):
-        medal = medals[i] if i < 3 else f"{i+1}."
-        embed.add_field(
-            name=f"{medal} {custom}",
-            value=f"⭐ Điểm: {info['point']}\n🎮 Số trận: {info['match']}",
-            inline=False
-        )
+    embed.set_image(url=IMAGE_URL)
 
     await interaction.response.send_message(embed=embed)
-
 
 # ================= READY =================
 @bot.event
 async def on_ready():
     await bot.tree.sync()
     print(f"Đã đăng nhập: {bot.user}")
-
 
 bot.run(TOKEN)
