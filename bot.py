@@ -8,10 +8,9 @@ TOKEN = os.getenv("TOKEN")
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Lưu dữ liệu
 data = {}
 
-# ================= FORM POPUP =================
+# ================= FORM =================
 class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
 
     id_custom = discord.ui.TextInput(label="ID Custom")
@@ -44,20 +43,9 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
         if custom not in data:
             data[custom] = {
                 "point": 0,
-                "match": 0,
-                "last_game": 0,
-                "last_kill": 0,
-                "last_top": 0,
-                "last_match_point": 0
+                "match": 0
             }
 
-        # Lưu dữ liệu trận gần nhất
-        data[custom]["last_game"] = game
-        data[custom]["last_kill"] = kill
-        data[custom]["last_top"] = top
-        data[custom]["last_match_point"] = diem
-
-        # Cộng tổng
         data[custom]["point"] += diem
         data[custom]["match"] += 1
 
@@ -92,36 +80,26 @@ async def bxh(interaction: discord.Interaction):
         reverse=True
     )
 
-    # ===== TẠO ẢNH =====
-    width = 900
-    height = 120 + (len(sorted_data) * 70)
+    # ===== MỞ ẢNH NỀN =====
+    try:
+        img = Image.open("background.png").convert("RGB")
+    except:
+        await interaction.followup.send("❌ Không tìm thấy background.png")
+        return
 
-    img = Image.new("RGB", (width, height), (25, 25, 25))
     draw = ImageDraw.Draw(img)
 
     try:
-        font_title = ImageFont.truetype("arial.ttf", 40)
-        font_text = ImageFont.truetype("arial.ttf", 26)
+        font = ImageFont.truetype("arial.ttf", 30)
     except:
-        font_title = ImageFont.load_default()
-        font_text = ImageFont.load_default()
+        font = ImageFont.load_default()
 
-    draw.text((300, 20), "BANG XEP HANG", fill="gold", font=font_title)
-
-    y = 100
+    y = 200
     rank = 1
 
     for custom, info in sorted_data:
-        text = (
-            f"{rank}. {custom} | "
-            f"{info['point']} diem | "
-            f"{info['match']} tran | "
-            f"Game {info['last_game']} | "
-            f"{info['last_kill']} Kill | "
-            f"Top {info['last_top']}"
-        )
-
-        draw.text((50, y), text, fill="white", font=font_text)
+        text = f"{rank}. {custom} - {info['point']} điểm ({info['match']} trận)"
+        draw.text((150, y), text, fill="white", font=font)
         y += 60
         rank += 1
 
