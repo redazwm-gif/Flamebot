@@ -90,22 +90,29 @@ async def tinhdiem(interaction: discord.Interaction):
 # ================= LỆNH /bxh =================
 @bot.tree.command(name="bxh", description="Xem bảng xếp hạng")
 async def bxh(interaction: discord.Interaction):
+
     if not data:
         await interaction.response.send_message("Chưa có dữ liệu điểm.")
         return
 
     sorted_data = sorted(data.items(), key=lambda x: x[1]["point"], reverse=True)
 
-    msg = "🏆 **BẢNG XẾP HẠNG** 🏆\n\n"
+    embed = discord.Embed(
+        title="🏆 BẢNG XẾP HẠNG 🏆",
+        color=discord.Color.gold()
+    )
+
     medals = ["🥇", "🥈", "🥉"]
 
     for i, (custom, info) in enumerate(sorted_data):
         medal = medals[i] if i < 3 else f"{i+1}."
-        msg += f"{medal} **{custom}**\n"
-        msg += f"   ⭐ Điểm: {info['point']}\n"
-        msg += f"   🎮 Số trận: {info['match']}\n\n"
+        embed.add_field(
+            name=f"{medal} {custom}",
+            value=f"⭐ Điểm: {info['point']}\n🎮 Số trận: {info['match']}",
+            inline=False
+        )
 
-    await interaction.response.send_message(msg)
+    await interaction.response.send_message(embed=embed)
 
 
 # ================= READY =================
