@@ -1,29 +1,36 @@
-const { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } = require('discord.js');
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const { 
+  Client, 
+  GatewayIntentBits, 
+  SlashCommandBuilder, 
+  REST, 
+  Routes, 
+  ModalBuilder, 
+  TextInputBuilder, 
+  TextInputStyle, 
+  ActionRowBuilder 
+} = require('discord.js');
 
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 
-let data = {}; // lưu điểm theo ID
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
 
-// ===== Tạo slash commands =====
+let database = {}; // lưu điểm theo custom
+
+// ===== Đăng ký slash command =====
 const commands = [
   new SlashCommandBuilder()
-    .setName('add')
-    .setDescription('Cộng điểm cho ID')
-    .addStringOption(option =>
-      option.setName('id')
-        .setDescription('Nhập ID')
-        .setRequired(true))
-    .addIntegerOption(option =>
-      option.setName('diem')
-        .setDescription('Nhập điểm trận')
-        .setRequired(true)
-    ),
-
+    .setName('tinhdiem')
+    .setDescription('Nhập điểm custom'),
   new SlashCommandBuilder()
     .setName('bxh')
     .setDescription('Xem bảng xếp hạng')
+    .addStringOption(option =>
+      option.setName('custom')
+        .setDescription('Nhập id custom')
+        .setRequired(true))
 ].map(cmd => cmd.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(TOKEN);
@@ -35,49 +42,87 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
   );
 })();
 
-// ===== Khi bot nhận lệnh =====
+// ===== Xử lý interaction =====
 client.on('interactionCreate', async interaction => {
-  if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === 'add') {
-    const id = interaction.options.getString('id');
-    const diem = interaction.options.getInteger('diem');
+  if (interaction.isChatInputCommand()) {
 
-    if (!data[id]) {
-      data[id] = { total: 0, matches: 0 };
+    // Mở form
+    if (interaction.commandName === 'tinhdiem') {
+
+      const modal = new ModalBuilder()
+        .setCustomId('formTinhDiem')
+        .setTitle('Tính điểm custom');
+
+      const idCustom = new TextInputBuilder()
+        .setCustomId('idcustom')
+        .setLabel('ID Custom')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const idGame = new TextInputBuilder()
+        .setCustomId('idgame')
+        .setLabel('ID Người chơi')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      const diem = new TextInputBuilder()
+        .setCustomId('diem')
+        .setLabel('Điểm trận')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(idCustom),
+        new ActionRowBuilder().addComponents(idGame),
+        new ActionRowBuilder().addComponents(diem)
+      );
+
+      await interaction.showModal(modal);
     }
 
-    data[id].total += diem;
-    data[id].matches += 1;
+    // Xem bảng xếp hạng
+    if (interaction.commandName === 'bxh') {
+      const custom = interaction.options.getString('custom');
 
-    let msg = `ID ${id} đã chơi ${data[id].matches} trận.\nTổng điểm: ${data[id].total}`;
+      if (!database[custom]) {
+        return interaction.reply("Custom này chưa có dữ liệu.");
+      }
 
-    if (data[id].matches === 4) {
-      msg += `\n🔥 Đã đủ 4 trận!`;
+      let sorted = Object.entries(database[custom])
+        .sort((a, b) => b[1] - a[1]);
+
+      let text = `🏆 BXH Custom ${custom} 🏆\n`;
+
+      sorted.forEach((player, index) => {
+        text += `${index + 1}. ID ${player[0]} - ${player[1]} điểm\n`;
+      });
+
+      await interaction.reply(text);
     }
-
-    if (data[id].matches === 5) {
-      msg += `\n🔥 Đã đủ 5 trận!`;
-    }
-
-    await interaction.reply(msg);
   }
 
-  if (interaction.commandName === 'bxh') {
-    if (Object.keys(data).length === 0) {
-      return interaction.reply("Chưa có dữ liệu.");
+  // Khi submit form
+  if (interaction.isModalSubmit()) {
+
+    if (interaction.customId === 'formTinhDiem') {
+
+      const custom = interaction.fields.getTextInputValue('idcustom');
+      const id = interaction.fields.getTextInputValue('idgame');
+      const diem = parseInt(interaction.fields.getTextInputValue('diem'));
+
+      if (!database[custom]) {
+        database[custom] = {};
+      }
+
+      if (!database[custom][id]) {
+        database[custom][id] = 0;
+      }
+
+      database[custom][id] += diem;
+
+      await interaction.reply(`✅ Đã cộng ${diem} điểm cho ID ${id} trong custom ${custom}`);
     }
-
-    let sorted = Object.entries(data)
-      .sort((a, b) => b[1].total - a[1].total);
-
-    let text = "🏆 BẢNG XẾP HẠNG 🏆\n";
-
-    sorted.forEach((item, index) => {
-      text += `${index + 1}. ID ${item[0]} - ${item[1].total} điểm (${item[1].matches} trận)\n`;
-    });
-
-    await interaction.reply(text);
   }
 });
 
