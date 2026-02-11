@@ -1,117 +1,99 @@
-"""
-Copyright © Krypton 2019-Present - https://github.com/kkrypt0nn (https://krypton.ninja)
-Description:
-🐍 A simple template to start to code your own and personalized Discord bot in Python
-
-Version: 6.5.0
-"""
-
-import logging
-import os
 import discord
-from discord import app_commands
 from discord.ext import commands
-from dotenv import load_dotenv
+import os
 
-load_dotenv()
-
-# ================= INTENTS =================
+TOKEN = os.getenv("TOKEN")
 
 intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ================= LOGGING =================
+# Lưu dữ liệu
+data = {}
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("discord_bot")
+# ================= FORM POPUP =================
+class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
 
-# ================= DIEM DATA =================
+    id_custom = discord.ui.TextInput(
+        label="ID Custom",
+        placeholder="VD: TT2"
+    )
 
-diem_data = {}
+    id_game = discord.ui.TextInput(
+        label="ID Game",
+        placeholder="VD: 1"
+    )
 
-# ================= BOT CLASS =================
+    kill = discord.ui.TextInput(
+        label="Số Kill",
+        placeholder="VD: 5"
+    )
 
-class DiscordBot(commands.Bot):
-    def __init__(self):
-        super().__init__(
-            command_prefix="!",
-            intents=intents,
-            help_command=None,
-        )
+    top = discord.ui.TextInput(
+        label="Top",
+        placeholder="VD: 1"
+    )
 
-    async def setup_hook(self):
-        logger.info("Bot đang khởi động...")
+    async def on_submit(self, interaction: discord.Interaction):
 
-        self.tree.add_command(diem)
-        self.tree.add_command(bxh)
+        custom = self.id_custom.value
+        game = self.id_game.value
 
-        await self.tree.sync()
-        logger.info("Slash command đã sync xong!")
+        try:
+            kill = int(self.kill.value)
+            top = int(self.top.value)
+        except:
+            await interaction.response.send_message("❌ Kill và Top phải là số!", ephemeral=True)
+            return
 
-    async def on_ready(self):
-        logger.info(f"Đã đăng nhập: {self.user}")
+        # Công thức tính điểm (có thể chỉnh)
+        diem = kill + (15 - top)
 
-# ================= SLASH COMMAND DIEM =================
+        if custom not in data:
+            data[custom] = {"point": 0, "match": 0}
 
-@app_commands.command(name="diem", description="Quản lý điểm")
-@app_commands.describe(
-    hanh_dong="xem / cong / tru",
-    user="Chọn người",
-    so_diem="Số điểm (nếu cộng/trừ)"
-)
-@app_commands.choices(hanh_dong=[
-    app_commands.Choice(name="xem", value="xem"),
-    app_commands.Choice(name="cong", value="cong"),
-    app_commands.Choice(name="tru", value="tru"),
-])
-async def diem(
-    interaction: discord.Interaction,
-    hanh_dong: app_commands.Choice[str],
-    user: discord.Member,
-    so_diem: int = 0
-):
-    uid = user.id
-    diem_data.setdefault(uid, 0)
+        data[custom]["point"] += diem
+        data[custom]["match"] += 1
 
-    if hanh_dong.value == "xem":
         await interaction.response.send_message(
-            f"📊 Điểm của {user.mention}: {diem_data[uid]}"
+            f"🔥 Custom: {custom}\n"
+            f"🎮 Game: {game}\n"
+            f"💥 Kill: {kill}\n"
+            f"🏆 Top: {top}\n"
+            f"⭐ Điểm trận: {diem}\n"
+            f"📊 Tổng điểm: {data[custom]['point']}\n"
+            f"🎮 Tổng trận: {data[custom]['match']}"
         )
 
-    elif hanh_dong.value == "cong":
-        diem_data[uid] += so_diem
-        await interaction.response.send_message(
-            f"✅ Đã cộng {so_diem} điểm cho {user.mention}\nTổng: {diem_data[uid]}"
-        )
+# ================= LỆNH /tinhdiem =================
+@bot.tree.command(name="tinhdiem", description="Nhập điểm bằng form popup")
+async def tinhdiem(interaction: discord.Interaction):
+    await interaction.response.send_modal(DiemModal())
 
-    elif hanh_dong.value == "tru":
-        diem_data[uid] -= so_diem
-        await interaction.response.send_message(
-            f"➖ Đã trừ {so_diem} điểm của {user.mention}\nTổng: {diem_data[uid]}"
-        )
-
-# ================= SLASH COMMAND BXH =================
-
-@app_commands.command(name="bxh", description="Xem bảng xếp hạng")
+# ================= LỆNH /bxh =================
+@bot.tree.command(name="bxh", description="Xem bảng xếp hạng")
 async def bxh(interaction: discord.Interaction):
-
-    if not diem_data:
+    if not data:
         await interaction.response.send_message("Chưa có dữ liệu điểm.")
         return
 
-    sorted_users = sorted(diem_data.items(), key=lambda x: x[1], reverse=True)
+    sorted_data = sorted(data.items(), key=lambda x: x[1]["point"], reverse=True)
 
-    message = "🏆 **BẢNG XẾP HẠNG** 🏆\n\n"
+    msg = "🏆 **BẢNG XẾP HẠNG** 🏆\n\n"
 
-    for i, (uid, score) in enumerate(sorted_users[:10], start=1):
-        member = interaction.guild.get_member(uid)
-        if member:
-            message += f"{i}. {member.display_name} - {score} điểm\n"
+    medals = ["🥇", "🥈", "🥉"]
 
-    await interaction.response.send_message(message)
+    for i, (custom, info) in enumerate(sorted_data):
+        medal = medals[i] if i < 3 else f"{i+1}."
+        msg += f"{medal} **{custom}**\n"
+        msg += f"   ⭐ Điểm: {info['point']}\n"
+        msg += f"   🎮 Số trận: {info['match']}\n\n"
 
-# ================= RUN BOT =================
+    await interaction.response.send_message(msg)
 
-bot = DiscordBot()
-bot.run(os.getenv("TOKEN"))
+# ================= READY =================
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+    print(f"Đã đăng nhập: {bot.user}")
+
+bot.run(TOKEN)
