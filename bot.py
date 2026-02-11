@@ -46,7 +46,20 @@ class DiemModal(discord.ui.Modal, title="Nhập thông tin trận đấu"):
             return
 
         # Công thức tính điểm (có thể chỉnh)
-        diem = kill + (15 - top)
+        top_points = {
+    1: 12,
+    2: 9,
+    3: 8,
+    4: 7,
+    5: 6,
+    6: 5,
+    7: 4,
+    8: 3,
+    9: 2,
+    10: 1
+}
+
+diem = kill + top_points.get(top, 0)
 
         if custom not in data:
             data[custom] = {"point": 0, "match": 0}
